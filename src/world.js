@@ -149,6 +149,13 @@ export async function createWorld(container) {
     k.animations.forEach((fn) => fn(0));
     await createStaticBatch(interior.room).finish();
     k.releaseGeometryCaches();
+    // These coordinate frames never move. Keep their matrices fixed so they do
+    // not force every static batch to recompute its world transform each frame.
+    // Animated children still update their own local and world matrices.
+    [scene, city.city, interior.room].forEach((root) => {
+      root.updateMatrix();
+      root.matrixAutoUpdate = false;
+    });
     renderer.shadowMap.autoUpdate = false;
     renderer.shadowMap.needsUpdate = true;
     // Six photographic compositions come from the real geometry of this world.

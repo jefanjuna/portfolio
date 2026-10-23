@@ -49,6 +49,61 @@ export function buildBayWater(city, k, map) {
   const geometry = new T.BufferGeometry();
   geometry.setAttribute("position", new T.Float32BufferAttribute(vertices, 3));
   geometry.computeVertexNormals();
+  // Reuse only bit-identical vertices. The tessellation repeats shared corners;
+  // indexing them preserves every triangle and normal while the GPU can reuse
+  // the expensive wave calculation instead of evaluating it for each corner.
+  const attributes = Object.entries(geometry.attributes),
+    bits = attributes.map(
+      ([, attribute]) =>
+        new Uint32Array(
+          attribute.array.buffer,
+          attribute.array.byteOffset,
+          attribute.array.length,
+        ),
+    ),
+    unique = [],
+    lookup = new Map(),
+    indices = new Uint32Array(geometry.attributes.position.count);
+  for (let i = 0; i < indices.length; i++) {
+    let key = "";
+    attributes.forEach(([, attribute], a) => {
+      for (let component = 0; component < attribute.itemSize; component++)
+        key += bits[a][i * attribute.itemSize + component] + ":";
+    });
+    let index = lookup.get(key);
+    if (index === undefined) {
+      index = unique.length;
+      unique.push(i);
+      lookup.set(key, index);
+    }
+    indices[i] = index;
+  }
+  for (const [name, attribute] of attributes) {
+    const values = new attribute.array.constructor(
+      unique.length * attribute.itemSize,
+    );
+    unique.forEach((sourceIndex, i) => {
+      const start = sourceIndex * attribute.itemSize;
+      values.set(
+        attribute.array.subarray(start, start + attribute.itemSize),
+        i * attribute.itemSize,
+      );
+    });
+    geometry.setAttribute(
+      name,
+      new attribute.constructor(
+        values,
+        attribute.itemSize,
+        attribute.normalized,
+      ),
+    );
+  }
+  geometry.setIndex(
+    new T.BufferAttribute(
+      unique.length <= 65535 ? new Uint16Array(indices) : indices,
+      1,
+    ),
+  );
   const water = new Reflector(geometry, {
     textureWidth: innerWidth < 700 ? 512 : 1024,
     textureHeight: innerWidth < 700 ? 512 : 1024,
@@ -97,16 +152,21 @@ export function buildBayWater(city, k, map) {
       }
       entry.material.clippingPlanes = entry.clipped;
     }
-    // The reflected camera reverses its horizontal axis. Mirror the principal
-    // point too, so an off-centre story composition still covers the whole view.
-    reflectionSource.copy(camera, false);
-    reflectionSource.projectionMatrix.elements[8] *= -1;
-    reflectionSource.projectionMatrixInverse
-      .copy(reflectionSource.projectionMatrix)
-      .invert();
+    const worldAutoUpdate = scene.matrixWorldAutoUpdate;
     try {
+      // The reflected camera reverses its horizontal axis. Mirror the principal
+      // point too, so an off-centre story composition still covers the whole view.
+      reflectionSource.copy(camera, false);
+      reflectionSource.projectionMatrix.elements[8] *= -1;
+      reflectionSource.projectionMatrixInverse
+        .copy(reflectionSource.projectionMatrix)
+        .invert();
+      // The outer render has already updated every world transform. The mirror
+      // renders the same instant, so its nested render can reuse those matrices.
+      scene.matrixWorldAutoUpdate = false;
       reflect.call(this, renderer, scene, reflectionSource, ...args);
     } finally {
+      scene.matrixWorldAutoUpdate = worldAutoUpdate;
       for (const entry of reflectionMaterials)
         entry.material.clippingPlanes = entry.saved;
     }

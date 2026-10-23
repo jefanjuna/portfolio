@@ -34,6 +34,10 @@ Hidden vehicle/person models only supply animation matrices and are excluded fro
 render traversal. Traffic, people, water reflections and camera interactions stay
 active.
 
+Water keeps its full tessellation and wave shader, with bit-identical vertices
+sharing indices. Reflection rendering reuses the scene matrices already updated
+for the main view.
+
 Facade diffuse textures are shared by style. Compact screens and devices with a
 coarse pointer use smaller emissive textures, drawn from the same window layout
 and colours. Desktop texture resolution is unchanged. Photographs are rendered
