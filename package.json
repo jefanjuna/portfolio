@@ -1,0 +1,23 @@
+{
+  "name": "joshjunarto-portfolio",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "node scripts/build.mjs && node scripts/check-build.mjs",
+    "check": "node scripts/check-build.mjs",
+    "format": "prettier --write \"src/*.js\" \"src/*.html\" \"src/*.css\" \"scripts/*.mjs\" package.json vercel.json README.md"
+  },
+  "engines": {
+    "node": ">=24"
+  },
+  "dependencies": {
+    "three": "0.170.0"
+  },
+  "devDependencies": {
+    "esbuild": "0.28.2",
+    "html-minifier-terser": "7.2.0",
+    "prettier": "3.9.10",
+    "svgo": "4.1.0"
+  }
+}

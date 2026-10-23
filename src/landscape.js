@@ -1,0 +1,337 @@
+// Planting follows mapped park/wood/grass polygons and recorded tree points.
+// The exact placement of unrecorded individual plants is an artistic infill.
+export function buildLandscape(city, k, map, polygon, space) {
+  const { THREE: T, random, mat, mesh, box, cyl, ball, group, palette: p } = k,
+    obstacles = [],
+    plants = [],
+    dummy = new T.Object3D(),
+    cells = new Map(),
+    cell = 25;
+  const insert = (x, z, o) => {
+    const key = Math.floor(x / cell) + "," + Math.floor(z / cell);
+    if (!cells.has(key)) cells.set(key, []);
+    cells.get(key).push(o);
+  };
+  for (const r of [...map.roads, ...map.walks])
+    for (let i = 1; i < r.p.length; i++) {
+      const a = r.p[i - 1],
+        b = r.p[i],
+        l = Math.hypot(b[0] - a[0], b[1] - a[1]),
+        w = r.width ? r.width / 2 + 2 : 2.4;
+      for (let d = 0; d <= l; d += 8)
+        insert(
+          a[0] + ((b[0] - a[0]) * d) / (l || 1),
+          a[1] + ((b[1] - a[1]) * d) / (l || 1),
+          { a, b, w },
+        );
+    }
+  const clear = (x, z) => {
+    for (let dx = -1; dx <= 1; dx++)
+      for (let dz = -1; dz <= 1; dz++)
+        for (const o of cells.get(
+          Math.floor(x / cell) + dx + "," + (Math.floor(z / cell) + dz),
+        ) || []) {
+          const vx = o.b[0] - o.a[0],
+            vz = o.b[1] - o.a[1],
+            t = T.MathUtils.clamp(
+              ((x - o.a[0]) * vx + (z - o.a[1]) * vz) /
+                (vx * vx + vz * vz || 1),
+              0,
+              1,
+            );
+          if (Math.hypot(x - o.a[0] - vx * t, z - o.a[1] - vz * t) < o.w)
+            return false;
+        }
+    return (
+      Math.hypot(x, z) > 12 &&
+      !(
+        buildingCells.get(Math.floor(x / cell) + "," + Math.floor(z / cell)) ||
+        []
+      ).some((b) => inside([x, z], b.p))
+    );
+  };
+  const inside = (p, ring) => {
+    let c = false;
+    for (let i = 0, j = ring.length - 1; i < ring.length; j = i++) {
+      const a = ring[i],
+        b = ring[j];
+      if (
+        a[1] > p[1] !== b[1] > p[1] &&
+        p[0] < ((b[0] - a[0]) * (p[1] - a[1])) / (b[1] - a[1]) + a[0]
+      )
+        c = !c;
+    }
+    return c;
+  };
+  const buildingCells = new Map();
+  for (const b of map.buildings) {
+    if (b.min > 10) continue;
+    const xs = b.p.map((p) => p[0]),
+      zs = b.p.map((p) => p[1]);
+    for (
+      let x = Math.floor(Math.min(...xs) / cell);
+      x <= Math.floor(Math.max(...xs) / cell);
+      x++
+    )
+      for (
+        let z = Math.floor(Math.min(...zs) / cell);
+        z <= Math.floor(Math.max(...zs) / cell);
+        z++
+      ) {
+        const key = x + "," + z;
+        if (!buildingCells.has(key)) buildingCells.set(key, []);
+        buildingCells.get(key).push(b);
+      }
+  }
+  const colours = {
+      park: "#1c3c2d",
+      garden: "#294734",
+      grass: "#334e35",
+      wood: "#163629",
+      forest: "#183e2b",
+      scrub: "#3a4a32",
+      flowerbed: "#514a3e",
+      meadow: "#4b5938",
+      golf_course: "#395838",
+    },
+    mats = {};
+  Object.entries(colours).forEach(
+    ([kind, color]) => (mats[kind] = mat({ color, roughness: 0.96 })),
+  );
+  const sorted = [...map.parks].sort((a, b) => area(b.p) - area(a.p));
+  sorted.forEach((park, i) => {
+    polygon(
+      park.p,
+      0,
+      mats[park.kind] || mats.park,
+      0.015 + Math.min(i, 500) * 0.0001,
+    );
+    const xs = park.p.map((p) => p[0]),
+      zs = park.p.map((p) => p[1]),
+      minX = Math.min(...xs),
+      maxX = Math.max(...xs),
+      minZ = Math.min(...zs),
+      maxZ = Math.max(...zs),
+      a = area(park.p),
+      dense = ["forest", "wood", "garden"].includes(park.kind),
+      count = Math.min(
+        700,
+        Math.floor(a / (dense ? 150 : park.kind === "grass" ? 1700 : 700)),
+      );
+    for (let j = 0; j < count * 2 && plants.length < 6500; j++) {
+      const x = minX + random() * (maxX - minX),
+        z = minZ + random() * (maxZ - minZ);
+      if (!inside([x, z], park.p) || !clear(x, z)) continue;
+      plants.push({
+        x,
+        z,
+        h: 5 + random() * 9,
+        type:
+          random() < 0.14
+            ? "palm"
+            : j % 4 === 0
+              ? "narrow"
+              : j % 3 === 0
+                ? "rain"
+                : "broad",
+      });
+    }
+  });
+  for (const t of map.trees) {
+    const [x, z] = t.p;
+    if (Math.hypot(x, z) < 12) continue;
+    plants.push({
+      x,
+      z,
+      h: t.h || 6 + random() * 7,
+      type: /palm|cocos|roystonea/i.test(t.species)
+        ? "palm"
+        : random() < 0.14
+          ? "palm"
+          : random() < 0.35
+            ? "rain"
+            : "broad",
+    });
+  }
+  const trunks = [],
+    crowns = [],
+    fronds = [];
+  for (const t of plants) {
+    const { x, z, h, type } = t;
+    obstacles.push({ x, z, r: 0.55 });
+    trunks.push({
+      p: [x, h * 0.38, z],
+      s: [type === "palm" ? 0.19 : 0.3, h * 0.76, type === "palm" ? 0.19 : 0.3],
+    });
+    if (type === "palm") {
+      for (let j = 0; j < 7; j++) {
+        const a = (j / 7) * Math.PI * 2;
+        fronds.push({
+          p: [x + Math.sin(a) * h * 0.16, h * 0.8, z + Math.cos(a) * h * 0.16],
+          s: [0.6, h * 0.035, h * 0.33],
+          yaw: a,
+          pitch: 0.22,
+        });
+      }
+    } else {
+      for (let j = 0; j < 4; j++) {
+        const a = j * 2.4;
+        crowns.push({
+          p: [
+            x + Math.cos(a) * h * 0.15,
+            h * 0.75 + j * 0.35,
+            z + Math.sin(a) * h * 0.15,
+          ],
+          s:
+            type === "rain"
+              ? [h * 0.37, h * 0.17, h * 0.35]
+              : type === "narrow"
+                ? [h * 0.17, h * 0.32, h * 0.17]
+                : [h * 0.26, h * 0.25, h * 0.26],
+        });
+      }
+    }
+  }
+  function instances(items, geometry, material) {
+    const inst = new T.InstancedMesh(geometry, material, items.length);
+    items.forEach((o, i) => {
+      dummy.position.set(...o.p);
+      dummy.scale.set(...o.s);
+      dummy.rotation.set(o.pitch || 0, o.yaw || 0, 0);
+      dummy.updateMatrix();
+      inst.setMatrixAt(i, dummy.matrix);
+      if (material.color.g > material.color.r)
+        inst.setColorAt(
+          i,
+          new T.Color().setHSL(
+            0.28 + random() * 0.08,
+            0.2 + random() * 0.1,
+            0.22 + random() * 0.1,
+          ),
+        );
+    });
+    inst.castShadow = true;
+    inst.receiveShadow = true;
+    city.add(inst);
+    return inst;
+  }
+  instances(
+    trunks,
+    new T.CylinderGeometry(1, 1.2, 1, 7),
+    mat({ color: "#58483a", roughness: 1 }),
+  );
+  instances(
+    crowns,
+    new T.IcosahedronGeometry(1, 1),
+    mat({ color: "#3b714c", roughness: 0.9 }),
+  );
+  instances(
+    fronds,
+    new T.SphereGeometry(1, 8, 6),
+    mat({ color: "#356c47", roughness: 0.85 }),
+  );
+  const placements = [],
+    lights = [],
+    bulb = mat({
+      color: "#ffd6a0",
+      emissive: "#ffcf91",
+      emissiveIntensity: 2.5,
+    }),
+    flicker = [];
+  const lampPoints = map.walks
+    .filter((r, i) => i % 7 === 0 && r.p.length > 1)
+    .map((r) => {
+      const a = r.p[0],
+        b = r.p[1],
+        l = Math.hypot(b[0] - a[0], b[1] - a[1]) || 1;
+      return [
+        a[0] - ((b[1] - a[1]) / l) * 2.4,
+        r.y?.[0] || 0,
+        a[1] + ((b[0] - a[0]) / l) * 2.4,
+        Math.atan2(-(b[1] - a[1]), b[0] - a[0]),
+      ];
+    });
+  lampPoints.forEach(([x, y, z, yaw], i) => {
+    const co = Math.cos(yaw),
+      si = Math.sin(yaw),
+      world = (u, v) => [x + co * u + si * v, z - si * u + co * v],
+      centre = world(0, 0.9);
+    if (
+      Math.hypot(x, z) < 20 ||
+      !space.rectangleClear(centre[0], centre[1], y, 4.9, 3.4, yaw)
+    )
+      return;
+    placements.push({
+      x: centre[0],
+      z: centre[1],
+      y,
+      width: 4.9,
+      depth: 3.4,
+      yaw,
+    });
+    const g = group(city, x, y, z);
+    g.rotation.y = yaw;
+    cyl(0.07, 5.5, p.metal, g, 0, 2.75, 0);
+    box(1.3, 0.08, 0.3, p.metal, g, 0.48, 5.48, 0);
+    const lamp = box(0.6, 0.08, 0.35, bulb, g, 0.95, 5.44, 0);
+    const lampPos = world(0.95, 0);
+    lights.push({ x: lampPos[0], y: y + 5.3, z: lampPos[1] });
+    obstacles.push({ x, z, r: 0.4 });
+    if (i === 17 || i === 33) {
+      lamp.userData.dynamic = true;
+      flicker.push(lamp);
+    }
+    if (i % 4 === 0) {
+      box(1.9, 0.12, 0.5, p.wood, g, -1.5, 0.52, 0);
+      box(1.9, 0.45, 0.08, p.wood, g, -1.5, 0.82, -0.22);
+      for (const px of [-2.15, -0.85])
+        box(0.07, 0.5, 0.4, p.metal, g, px, 0.25, 0);
+      const benchPos = world(-1.5, 0);
+      obstacles.push({ x: benchPos[0], z: benchPos[1], r: 1.15 });
+      cyl(0.3, 0.9, p.metal, g, 1, 0.45, 1);
+      const binPos = world(1, 1);
+      obstacles.push({ x: binPos[0], z: binPos[1], r: 0.45 });
+    }
+    if (i % 3 === 0) {
+      for (let j = 0; j < 4; j++)
+        ball(-2 + j * 0.6, 0.4, 2, 0.58, mats.garden, g, 1, 0.6, 1);
+    }
+  });
+  k.animations.push((t) =>
+    flicker.forEach(
+      (o, i) => (o.visible = Math.sin(t * 23 + i) + Math.sin(t * 7.1) > -1.5),
+    ),
+  );
+  // A bounded pool of real lights follows the visible part of the route.
+  const pools = Array.from({ length: 8 }, () => {
+    const l = new T.PointLight("#ffcb8d", 95, 24, 2);
+    city.add(l);
+    return l;
+  });
+  return {
+    obstacles,
+    lights,
+    placements,
+    space,
+    treeCount: plants.length,
+    setEye(eye) {
+      const closest = lights
+        .map((o) => ({ ...o, d: (o.x - eye[0]) ** 2 + (o.z - eye[2]) ** 2 }))
+        .sort((a, b) => a.d - b.d)
+        .slice(0, pools.length);
+      pools.forEach((l, i) => {
+        const o = closest[i];
+        if (o) {
+          l.position.set(o.x, o.y, o.z);
+          l.intensity = o.d < 16000 ? 95 : 0;
+        }
+      });
+    },
+  };
+}
+function area(p) {
+  let a = 0;
+  for (let i = 0, j = p.length - 1; i < p.length; j = i++)
+    a += p[j][0] * p[i][1] - p[i][0] * p[j][1];
+  return Math.abs(a / 2);
+}

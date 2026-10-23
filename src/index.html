@@ -1,0 +1,515 @@
+<!doctype html>
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta
+      content="width=device-width,initial-scale=1,viewport-fit=cover"
+      name="viewport"
+    />
+    <script src="/reset.js"></script>
+    <meta content="#080d19" name="theme-color" />
+    <title>Josh Junarto</title>
+    <meta
+      content="Hey, I’m Josh. A student in Singapore, teaching myself code, tinkering with Linux, and looking a little closer through a camera."
+      name="description"
+    />
+    <meta content="Josh Junarto" property="og:title" />
+    <meta
+      content="School, code, cameras, and the things in between. Come in."
+      property="og:description"
+    />
+    <meta content="website" property="og:type" />
+    <link href="/assets/mark.svg" rel="icon" type="image/svg+xml" />
+    <link href="https://fonts.googleapis.com" rel="preconnect" />
+    <link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect" />
+    <link
+      href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600&amp;family=IBM+Plex+Mono:wght@400;500&amp;display=swap"
+      rel="stylesheet"
+    />
+    <link href="/style.css" rel="stylesheet" />
+    <link rel="preload" as="image" href="/assets/cursor-idle.svg" />
+    <link rel="preload" as="image" href="/assets/cursor-pressed.svg" />
+    <script src="/app.js" type="module"></script>
+    <link
+      as="font"
+      crossorigin=""
+      href="/assets/pilowlava-regular.woff2"
+      rel="preload"
+      type="font/woff2"
+    />
+    <link
+      as="font"
+      crossorigin=""
+      href="/assets/basteleur-moonlight.woff2"
+      rel="preload"
+      type="font/woff2"
+    />
+  </head>
+  <body>
+    <a class="skip" href="#home">Skip to the story</a>
+    <div aria-live="polite" class="arrival" id="arrival" role="status">
+      <div class="arrival-inner">
+        <span class="micro">JOSH JUNARTO</span>
+        <div aria-hidden="true" class="loading-monogram">J<span>J</span></div>
+        <div class="arrival-loading">
+          <i></i><span id="loading-label">Building portfolio</span>
+        </div>
+      </div>
+      <span class="arrival-corner micro">MY PORTFOLIO.</span>
+    </div>
+    <div aria-hidden="true" class="world" id="world">
+      <div class="fallback-world"></div>
+    </div>
+    <div aria-hidden="true" class="reading-shade"></div>
+    <div aria-hidden="true" class="grain"></div>
+    <div aria-hidden="true" id="shutter-flash"></div>
+    <header class="masthead">
+      <a aria-label="Josh Junarto, home" class="monogram" href="#home"
+        >j<span>/</span></a
+      >
+      <nav aria-label="Main navigation">
+        <button data-detail="profile" type="button">About <span>↗</span></button
+        ><button data-detail="work" type="button">
+          Showcase <span>↗</span></button
+        ><a href="/credits.html" target="_blank" rel="noopener noreferrer"
+          >Credits <span>↗</span></a
+        ><a href="mailto:devjoshcodes@gmail.com">Say hello <span>↗</span></a>
+      </nav>
+    </header>
+    <main class="journey" id="journey">
+      <section
+        aria-labelledby="home-title"
+        class="chapter"
+        data-place="Marina Bay, Singapore"
+        id="home"
+      >
+        <div class="scene-panel hero-panel left-panel">
+          <p class="eyebrow">HEY, I’M</p>
+          <h1 id="home-title">Josh<span class="surname">Junarto</span></h1>
+          <p class="hero-location">Student. Singapore.</p>
+          <p class="scene-copy">
+            I’m at ASRJC. I teach myself code, tinker with Linux, and take a
+            camera out when I need a change of view.
+          </p>
+          <p class="scroll-invitation">
+            <span aria-hidden="true">↓</span> Scroll and enjoy
+          </p>
+        </div>
+      </section>
+      <section
+        aria-labelledby="backstory-title"
+        class="chapter"
+        data-place="A little backstory, on the way in"
+        id="backstory"
+      >
+        <div class="scene-panel right-panel">
+          <p class="eyebrow">01 / A LITTLE BACKSTORY</p>
+          <h2 id="backstory-title">Before ASR,<br /><em>Maris Stella.</em></h2>
+          <p class="scene-copy">
+            I was in the media club’s EXCO. Cameras, lights, microphones — and a
+            team behind the scenes making things happen.
+          </p>
+          <button class="inline-link" data-detail="media" type="button">
+            A bit of context <span>+</span>
+          </button>
+        </div>
+      </section>
+      <section
+        aria-labelledby="threshold-title"
+        class="chapter"
+        data-place="Through the open window"
+        id="threshold"
+      >
+        <div class="scene-panel left-panel threshold-panel">
+          <p class="eyebrow">02 / A LITTLE CLOSER</p>
+          <h2 id="threshold-title">
+            A small room.<br /><em>A lot going on.</em>
+          </h2>
+          <p class="scene-copy">
+            Code, cameras and a few unfinished questions. I like keeping things
+            minimal and working on engineering projects.
+          </p>
+        </div>
+      </section>
+      <section
+        aria-labelledby="camera-title"
+        class="chapter"
+        data-place="A different way to look"
+        id="camera"
+      >
+        <div class="scene-panel left-panel">
+          <p class="eyebrow">03 / A DIFFERENT WAY TO LOOK</p>
+          <h2 id="camera-title">Lights. Camera.<br /><em>Action.</em></h2>
+          <p class="scene-copy">
+            Everyday details. The city at night. Photography gives me another
+            reason to go outside and look closer.
+          </p>
+          <button class="inline-link" id="viewfinder-button" type="button">
+            Look through the lens <span>⌑</span>
+          </button>
+        </div>
+      </section>
+      <section
+        aria-labelledby="underneath-title"
+        class="chapter"
+        data-place="Under the surface"
+        id="underneath"
+      >
+        <div class="scene-panel right-panel">
+          <p class="eyebrow">04 / HOW I LEARN</p>
+          <h2 id="underneath-title">
+            I learn by<br /><em>taking it apart.</em>
+          </h2>
+          <p class="scene-copy">
+            AI, networks, operating systems: I want to see the moving parts.
+            PyJosh is one small attempt, built with Python and JAX.
+          </p>
+          <button class="inline-link" data-detail="pyjosh" type="button">
+            View the project <span>↗</span>
+          </button>
+        </div>
+      </section>
+      <section
+        aria-labelledby="desktop-title"
+        class="chapter"
+        data-place="A desktop that feels like me"
+        id="desktop"
+      >
+        <div class="scene-panel left-panel">
+          <p class="eyebrow">05 / MY CORNER</p>
+          <h2 id="desktop-title">My desktop<br /><em>has opinions.</em></h2>
+          <p class="scene-copy">
+            I use Linux. I care about how it looks — and what it costs in
+            memory. The tiny details matter to me.
+          </p>
+          <button
+            aria-label="Switch the site colour palette to ember"
+            class="inline-link"
+            id="theme-switch"
+            type="button"
+          >
+            Try another colour <span>⌘</span>
+          </button>
+        </div>
+      </section>
+      <section
+        aria-labelledby="making-title"
+        class="chapter"
+        data-place="Things I’ve made"
+        id="making"
+      >
+        <div class="scene-panel left-panel">
+          <p class="eyebrow">06 / THINGS I’M FIGURING OUT</p>
+          <h2 id="making-title">
+            Some questions<br /><em>become projects.</em>
+          </h2>
+          <p class="scene-copy">
+            A homework tracker. A neural-network framework. A different approach
+            to an algorithm. All opensource on GitHub.
+          </p>
+          <button class="inline-link" data-detail="work" type="button">
+            Projects <span>↗</span>
+          </button>
+        </div>
+      </section>
+      <section
+        aria-labelledby="waypoints-title"
+        class="chapter"
+        data-place="Achievements"
+        id="waypoints"
+      >
+        <div class="scene-panel right-panel">
+          <p class="eyebrow">07 / ALONG THE WAY</p>
+          <h2 id="waypoints-title">A few<br /><em>achievements.</em></h2>
+          <dl class="waypoints">
+            <div>
+              <dt>AI Fundamentals</dt>
+              <dd>IBM</dd>
+            </div>
+            <div>
+              <dt>Python Essentials</dt>
+              <dd>Cisco</dd>
+            </div>
+          </dl>
+        </div>
+      </section>
+      <section
+        aria-labelledby="people-title"
+        class="chapter"
+        data-place="Better together"
+        id="people"
+      >
+        <div class="scene-panel right-panel">
+          <p class="eyebrow">08 / OTHER PERSPECTIVES</p>
+          <h2 id="people-title">Better with<br /><em>other people.</em></h2>
+          <p class="scene-copy">
+            Media club taught me coordination. Being a class leader is teaching
+            me to listen, stay open to suggestions, and help where I can.
+          </p>
+        </div>
+      </section>
+      <section
+        aria-labelledby="next-title"
+        class="chapter"
+        data-place="An open ending"
+        id="next"
+      >
+        <div class="scene-panel ending-panel">
+          <p class="eyebrow">09 / WHAT COMES NEXT</p>
+          <h2 id="next-title">
+            Still a student.<br /><em>Still exploring.</em>
+          </h2>
+          <p class="scene-copy">
+            AI, silicon, energy. A lot to learn, and plenty of room to change my
+            mind.
+          </p>
+          <a class="hello-link" href="mailto:devjoshcodes@gmail.com"
+            >Say hello <span>↗</span></a
+          >
+          <p class="closing-aside">
+            If something here sounds familiar,<br />we’ll probably have
+            something to talk about.
+          </p>
+          <footer>
+            <span>© <span id="year">2026</span> Josh Junarto</span
+            ><span>Made with ❤️ and 3js</span>
+          </footer>
+        </div>
+      </section>
+      <div aria-hidden="true" class="journey-return" id="journey-return"></div>
+      <div aria-hidden="true" id="loop-buffer"></div>
+    </main>
+    <aside aria-label="Experience controls" class="hud">
+      <div class="hud-controls">
+        <button
+          aria-label="Start music"
+          aria-controls="music-dialog"
+          id="music-open"
+          type="button"
+        >
+          <span aria-hidden="true" class="mini-disc"
+            ><i class="mini-vinyl"></i><i class="mini-tonearm"></i></span
+          ><span
+            ><b id="mini-track">THE MIXTAPE</b
+            ><small id="mini-state">Click to play</small></span
+          ><span class="music-open-glyph">↗</span></button
+        ><button
+          aria-label="Turn sound on"
+          aria-pressed="false"
+          class="sound-toggle"
+          id="sound-toggle"
+        >
+          ♩ <span>Sound off</span></button
+        ><button
+          aria-label="Pause idle animation"
+          aria-pressed="false"
+          class="motion-toggle"
+          id="motion-toggle"
+        >
+          Ⅱ <span>Motion</span>
+        </button>
+      </div>
+      <div class="chapter-progress">
+        <button type="button" id="chapter-open" aria-label="Choose a scene">
+          <span id="chapter-count">00 / 09</span
+          ><span aria-hidden="true" class="chapter-menu-glyph">☰</span></button
+        ><span id="chapter-place">The whole picture</span
+        ><i><b id="progress-line"></b></i>
+      </div>
+    </aside>
+    <nav aria-label="Jump through the story" class="chapter-nav">
+      <a aria-current="location" aria-label="Introduction" href="#home">00</a
+      ><a aria-label="Backstory" href="#backstory">01</a
+      ><a aria-label="Through the window" href="#threshold">02</a
+      ><a aria-label="Photography" href="#camera">03</a
+      ><a aria-label="Learning" href="#underneath">04</a
+      ><a aria-label="Linux" href="#desktop">05</a
+      ><a aria-label="Projects" href="#making">06</a
+      ><a aria-label="Achievements" href="#waypoints">07</a
+      ><a aria-label="People" href="#people">08</a
+      ><a aria-label="Contact" href="#next">09</a>
+    </nav>
+    <dialog aria-labelledby="detail-title" id="details">
+      <button
+        aria-label="Close details"
+        class="dialog-close"
+        data-close="details"
+        type="button"
+      >
+        Close <span>×</span>
+      </button>
+      <div class="dialog-content">
+        <p class="eyebrow" id="detail-kicker"></p>
+        <h2 id="detail-title"></h2>
+        <div id="detail-copy"></div>
+        <a id="detail-source" rel="noopener noreferrer" target="_blank"
+          >Explore on GitHub ↗</a
+        >
+      </div>
+    </dialog>
+    <dialog
+      aria-labelledby="music-title"
+      class="music-dialog"
+      id="music-dialog"
+    >
+      <button
+        aria-label="Close player"
+        class="dialog-close"
+        data-close="music-dialog"
+        type="button"
+      >
+        Close <span>×</span>
+      </button>
+      <div class="player-shell">
+        <p class="eyebrow">MUSIC PLAYER</p>
+        <h2 id="music-title">Playlist</h2>
+        <div class="record-sleeve">
+          <div aria-hidden="true" class="vinyl"><i></i></div>
+          <span class="sleeve-caption"
+            ><span aria-label="33 and one third revolutions per minute"
+              >33⅓</span
+            ><br /><span id="player-status" role="status"
+              >Press play.</span
+            ></span
+          >
+        </div>
+        <div class="track-meta">
+          <h3 id="track-title">Sunday Smooth</h3>
+          <p id="track-artist">Scott Buckley</p>
+        </div>
+        <audio id="mixtape-audio" preload="none"></audio>
+        <div class="track-timeline">
+          <label class="sr-only" for="track-seek">Track position</label
+          ><input
+            id="track-seek"
+            type="range"
+            min="0"
+            max="1"
+            step="0.1"
+            value="0"
+            disabled
+          />
+          <div class="track-times">
+            <span id="track-elapsed">0:00</span
+            ><span id="track-duration">0:00</span>
+          </div>
+        </div>
+        <div class="transport">
+          <button aria-label="Previous track" id="previous-track" type="button">
+            Ⅰ◀</button
+          ><button aria-label="Play track" id="play-track" type="button">
+            ▶</button
+          ><button aria-label="Next track" id="next-track" type="button">
+            ▶Ⅰ
+          </button>
+        </div>
+        <label class="player-volume" for="track-volume"
+          >Volume
+          <input
+            id="track-volume"
+            type="range"
+            min="0"
+            max="1"
+            step="0.01"
+            value="0.45" /></label
+        ><a
+          class="inline-link"
+          id="track-source"
+          rel="noopener noreferrer"
+          target="_blank"
+          >Track and artist ↗</a
+        >
+        <p class="local-note">
+          <span id="track-credit">Music by Scott Buckley. </span
+          ><a
+            href="https://creativecommons.org/licenses/by/4.0/"
+            target="_blank"
+            rel="noopener noreferrer"
+            >CC BY 4.0</a
+          >
+          · Full recordings, re-encoded for playback.
+        </p>
+        <div class="track-queue" id="track-queue"></div>
+      </div>
+    </dialog>
+    <dialog id="chapter-dialog" aria-labelledby="chapter-menu-title">
+      <button
+        aria-label="Close scenes"
+        class="dialog-close"
+        data-close="chapter-dialog"
+        type="button"
+      >
+        Close <span>×</span>
+      </button>
+      <div class="dialog-content">
+        <p class="eyebrow">THE JOURNEY</p>
+        <h2 id="chapter-menu-title">Choose a scene.</h2>
+        <nav id="scene-list" aria-label="Scenes"></nav>
+      </div>
+    </dialog>
+    <dialog
+      aria-labelledby="viewfinder-title"
+      class="viewfinder-dialog"
+      id="viewfinder"
+    >
+      <button
+        aria-label="Close viewfinder"
+        class="dialog-close"
+        data-close="viewfinder"
+        type="button"
+      >
+        Close <span>×</span>
+      </button>
+      <div class="viewfinder-frame">
+        <div aria-hidden="true" class="focusing-grid"></div>
+        <div class="viewfinder-top" aria-label="Camera indicators">
+          <span class="camera-mode">PHOTO</span><span>AUTO</span>
+        </div>
+        <div class="viewfinder-controls">
+          <div class="viewfinder-bottom">
+            <span class="camera-zoom">1×</span><span>AF / AE</span>
+          </div>
+          <p id="viewfinder-title">Take a picture.</p>
+          <button
+            aria-label="Release shutter"
+            id="shutter-button"
+            type="button"
+          >
+            <span></span>
+          </button>
+        </div>
+      </div>
+    </dialog>
+    <div aria-hidden="true" popover="manual" id="pointer-layer"></div>
+    <noscript
+      ><style>
+        .arrival,
+        .hud,
+        .chapter-nav {
+          display: none;
+        }
+        .scene-panel {
+          position: relative;
+          opacity: 1;
+          transform: none;
+          filter: none;
+          min-height: 90vh;
+        }
+        .chapter {
+          height: auto;
+        }
+        .world {
+          opacity: 0.25;
+        }
+        .scene-panel .eyebrow,
+        .scene-panel .scene-copy,
+        .scene-panel .inline-link,
+        .scene-panel .project-names {
+          opacity: 1;
+          translate: none;
+        }
+      </style></noscript
+    >
+  </body>
+</html>
