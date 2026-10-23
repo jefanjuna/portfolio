@@ -3,7 +3,8 @@ export const ROOM_FLOOR = 48.1;
 // Emissive light maps are separate from the reflective glass/concrete surfaces.
 export function makeArchitecture(k, city, map) {
   const { THREE: T, random, texture, mat, mesh, box, tube } = k,
-    cache = new Map();
+    cache = new Map(),
+    diffuseCache = new Map();
   const roofMat = mat({
       color: "#35424b",
       roughness: 0.68,
@@ -93,48 +94,63 @@ export function makeArchitecture(k, city, map) {
       span: 3 + Math.floor(random() * cols * 0.65),
       cool: (y + variant) % 5 === 0,
     }));
-    const diffuse = texture(W, H, (c, w, h) => {
-      c.fillStyle = pr.base;
-      c.fillRect(0, 0, w, h);
-      for (let y = 0; y < rows; y++)
-        for (let x = 0; x < cols; x++) {
-          const inset = pr.solid ? bw * 0.23 : 1,
-            sy = pr.solid ? 3 : 1;
-          c.fillStyle =
-            style === "mosaic"
-              ? ["#304c59", "#6d7d83", "#233f4c", "#87959a"][
-                  Math.floor(x / 3 + y / 3 + variant) % 4
-                ]
-              : pr.pane;
-          c.fillRect(
-            x * bw + inset,
-            y * rh + sy,
-            bw - inset * 2,
-            rh - (pr.solid ? 7 : 4),
-          );
-          if (style === "uob" || style === "horizontal") {
-            c.fillStyle = pr.mullion;
-            c.fillRect(x * bw, y * rh + rh - 4, bw, 3);
-          } else if (!pr.solid) {
-            c.fillStyle = pr.mullion;
-            c.fillRect(x * bw, y * rh, style === "ribbed" ? 2 : 1, rh);
+    // Building tint and lit-floor randomness belong to each material. The
+    // unlit facade drawing only depends on its style/variant, so share its
+    // pixels instead of allocating another canvas for each building colour.
+    const diffuseKey = style + ":" + variant;
+    let diffuse = diffuseCache.get(diffuseKey);
+    if (!diffuse) {
+      diffuse = texture(W, H, (c, w, h) => {
+        c.fillStyle = pr.base;
+        c.fillRect(0, 0, w, h);
+        for (let y = 0; y < rows; y++)
+          for (let x = 0; x < cols; x++) {
+            const inset = pr.solid ? bw * 0.23 : 1,
+              sy = pr.solid ? 3 : 1;
+            c.fillStyle =
+              style === "mosaic"
+                ? ["#304c59", "#6d7d83", "#233f4c", "#87959a"][
+                    Math.floor(x / 3 + y / 3 + variant) % 4
+                  ]
+                : pr.pane;
+            c.fillRect(
+              x * bw + inset,
+              y * rh + sy,
+              bw - inset * 2,
+              rh - (pr.solid ? 7 : 4),
+            );
+            if (style === "uob" || style === "horizontal") {
+              c.fillStyle = pr.mullion;
+              c.fillRect(x * bw, y * rh + rh - 4, bw, 3);
+            } else if (!pr.solid) {
+              c.fillStyle = pr.mullion;
+              c.fillRect(x * bw, y * rh, style === "ribbed" ? 2 : 1, rh);
+            }
+          }
+        for (let y = 0; y < rows; y++) {
+          if (
+            (style === "curtain" || style === "ribbed") &&
+            (y + variant * 3) % 13 === 0
+          ) {
+            c.fillStyle = pr.base;
+            c.fillRect(0, y * rh, w, rh * 0.65);
+          }
+          if (style === "garden" && y % 11 === 0) {
+            c.fillStyle = "#305f3b";
+            c.fillRect(0, y * rh, w, rh * 0.55);
           }
         }
-      for (let y = 0; y < rows; y++) {
-        if (
-          (style === "curtain" || style === "ribbed") &&
-          (y + variant * 3) % 13 === 0
-        ) {
-          c.fillStyle = pr.base;
-          c.fillRect(0, y * rh, w, rh * 0.65);
-        }
-        if (style === "garden" && y % 11 === 0) {
-          c.fillStyle = "#305f3b";
-          c.fillRect(0, y * rh, w, rh * 0.55);
-        }
-      }
-    });
-    const light = texture(W, H, (c, w, h) => {
+      });
+      diffuseCache.set(diffuseKey, diffuse);
+    }
+    // Keep every window, colour, inset and random decision in the original
+    // 512-pixel coordinate system. Compact displays only need fewer raster
+    // pixels; scaling the drawing retains the complete lit-window pattern.
+    const lightSize = k.facadeResolution || W;
+    const light = texture(lightSize, lightSize, (c) => {
+      if (lightSize !== W) c.scale(lightSize / W, lightSize / H);
+      const w = W,
+        h = H;
       c.fillStyle = "#000";
       c.fillRect(0, 0, w, h);
       for (let y = 0; y < rows; y++) {

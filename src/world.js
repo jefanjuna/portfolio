@@ -3,7 +3,8 @@ import { EffectComposer } from "three/addons/postprocessing/EffectComposer.js";
 import { RenderPass } from "three/addons/postprocessing/RenderPass.js";
 import { UnrealBloomPass } from "three/addons/postprocessing/UnrealBloomPass.js";
 import { OutputPass } from "three/addons/postprocessing/OutputPass.js";
-import { mergeGeometries } from "three/addons/utils/BufferGeometryUtils.js";
+import { createStaticBatch } from "./static-batch.js";
+import { yieldTask } from "./yield-task.js";
 import { ROOM_FLOOR } from "./architecture.js";
 import { fromOld } from "./geo.js";
 import { makeKit } from "./world-kit.js";
@@ -20,16 +21,18 @@ export async function createWorld(container) {
     environment,
     frame = 0,
     disposed = false,
-    contextLost = false;
+    contextLost = false,
+    artworkVersion = 0;
   const targets = [],
     cleanup = [];
-  const mobile = innerWidth < 700,
+  const mobile = innerWidth < 700 || matchMedia("(pointer: coarse)").matches,
     scene = new THREE.Scene();
   scene.background = new THREE.Color("#0b1b26");
   scene.fog = new THREE.FogExp2("#102334", 0.00025);
   function dispose() {
     if (disposed) return;
     disposed = true;
+    artworkVersion++;
     cancelAnimationFrame(frame);
     cleanup.forEach((fn) => fn());
     city?.dispose();
@@ -47,6 +50,11 @@ export async function createWorld(container) {
     geometries.forEach((g) => g.dispose());
     materials.forEach((m) => m.dispose());
     k?.textures.forEach((t) => t.dispose());
+    k?.releaseGeometryCaches();
+    if (k) {
+      k.animations.length = 0;
+      k.interactive.length = 0;
+    }
     targets.forEach((t) => t.dispose());
     environment?.dispose();
     composer?.passes.forEach((pass) => pass.dispose?.());
@@ -57,7 +65,9 @@ export async function createWorld(container) {
   }
   try {
     renderer = new THREE.WebGLRenderer({
-      antialias: true,
+      // The scene renders into the composer's texture. Multisampling the final
+      // full-screen output quad adds memory without smoothing scene geometry.
+      antialias: false,
       logarithmicDepthBuffer: true,
       powerPreference: "high-performance",
     });
@@ -78,14 +88,22 @@ export async function createWorld(container) {
     );
     composer = new EffectComposer(renderer);
     composer.addPass(new RenderPass(scene, camera));
-    composer.addPass(
-      new UnrealBloomPass(
-        new THREE.Vector2(innerWidth, innerHeight),
-        0.3,
-        0.5,
-        0.85,
-      ),
+    const bloom = new UnrealBloomPass(
+      new THREE.Vector2(innerWidth, innerHeight),
+      0.3,
+      0.5,
+      0.85,
     );
+    // Bloom only draws full-screen quads; its intermediate targets need no
+    // depth attachments. Keep depth on the main scene/composer targets.
+    [
+      bloom.renderTargetBright,
+      ...bloom.renderTargetsHorizontal,
+      ...bloom.renderTargetsVertical,
+    ].forEach((target) => {
+      target.depthBuffer = false;
+    });
+    composer.addPass(bloom);
     composer.addPass(new OutputPass());
     const ambient = new THREE.HemisphereLight("#7b9dc8", "#101820", 0.34);
     scene.add(ambient);
@@ -122,63 +140,15 @@ export async function createWorld(container) {
     cityMoon.shadow.bias = -0.00002;
     scene.add(cityMoon, cityMoon.target);
     k = makeKit(renderer);
+    k.facadeResolution = mobile ? 128 : 512;
+    await yieldTask();
     city = await buildCity(scene, k);
+    await yieldTask();
     const interior = buildRoom(scene, k);
     city.setProgress(0);
     k.animations.forEach((fn) => fn(0));
-    // Batch stationary surfaces by material so architectural detail does not
-    // mean thousands of JavaScript draw calls on every animation frame.
-    function batch(root) {
-      root.updateWorldMatrix(true, true);
-      const inverse = root.matrixWorld.clone().invert(),
-        buckets = new Map();
-      root.traverse((o) => {
-        if (
-          !o.isMesh ||
-          o.isInstancedMesh ||
-          Array.isArray(o.material) ||
-          o.userData.action
-        )
-          return;
-        let parent = o;
-        while (parent && parent !== root) {
-          if (parent.userData.dynamic) return;
-          parent = parent.parent;
-        }
-        const key = o.material.uuid;
-        if (!buckets.has(key))
-          buckets.set(key, {
-            material: o.material,
-            objects: [],
-            geometries: [],
-          });
-        const entry = buckets.get(key),
-          geometry = o.geometry.index
-            ? o.geometry.toNonIndexed()
-            : o.geometry.clone();
-        geometry.applyMatrix4(
-          new THREE.Matrix4().multiplyMatrices(inverse, o.matrixWorld),
-        );
-        entry.objects.push(o);
-        entry.geometries.push(geometry);
-      });
-      buckets.forEach(({ material, objects, geometries }) => {
-        if (objects.length < 2) {
-          geometries.forEach((g) => g.dispose());
-          return;
-        }
-        const merged = mergeGeometries(geometries, false);
-        geometries.forEach((g) => g.dispose());
-        if (!merged) return;
-        const mesh = new THREE.Mesh(merged, material);
-        mesh.castShadow = objects.some((o) => o.castShadow);
-        mesh.receiveShadow = objects.some((o) => o.receiveShadow);
-        objects.forEach((o) => o.removeFromParent());
-        root.add(mesh);
-      });
-    }
-    batch(city.city);
-    batch(interior.room);
+    await createStaticBatch(interior.room).finish();
+    k.releaseGeometryCaches();
     renderer.shadowMap.autoUpdate = false;
     renderer.shadowMap.needsUpdate = true;
     // Six photographic compositions come from the real geometry of this world.
@@ -210,7 +180,10 @@ export async function createWorld(container) {
           [100, 80, 650],
         ],
       ];
-    function refreshArtwork() {
+    async function refreshArtwork() {
+      const version = ++artworkVersion;
+      await yieldTask();
+      if (disposed || contextLost || version !== artworkVersion) return;
       // Render targets lose their pixels on context loss. Recreate the environment
       // and repaint the six photographs before exposing the recovered canvas.
       const pmrem = new THREE.PMREMGenerator(renderer),
@@ -225,13 +198,18 @@ export async function createWorld(container) {
       } finally {
         pmrem.dispose();
       }
-      const previousTarget = renderer.getRenderTarget(),
-        exposure = renderer.toneMappingExposure,
-        visible = interior.room.visible;
-      interior.room.visible = false;
-      renderer.toneMappingExposure = 1.65;
-      try {
-        interior.photoFrames.forEach((photo, i) => {
+      // Repaint one photograph per task. The moving world becomes usable first,
+      // instead of forcing twelve full-city render passes into startup.
+      for (let i = 0; i < interior.photoFrames.length; i++) {
+        await yieldTask();
+        if (disposed || contextLost || version !== artworkVersion) return;
+        const photo = interior.photoFrames[i],
+          previousTarget = renderer.getRenderTarget(),
+          exposure = renderer.toneMappingExposure,
+          visible = interior.room.visible;
+        interior.room.visible = false;
+        renderer.toneMappingExposure = 1.65;
+        try {
           const rt =
             targets[i] ||
             (targets[i] = new THREE.WebGLRenderTarget(
@@ -245,15 +223,19 @@ export async function createWorld(container) {
           photo.material.map = rt.texture;
           photo.material.color.setScalar(2.4);
           photo.material.needsUpdate = true;
-        });
-      } finally {
-        renderer.setRenderTarget(previousTarget);
-        renderer.toneMappingExposure = exposure;
-        interior.room.visible = visible;
-        renderer.shadowMap.needsUpdate = true;
+        } finally {
+          renderer.setRenderTarget(previousTarget);
+          renderer.toneMappingExposure = exposure;
+          interior.room.visible = visible;
+        }
+        request();
       }
+      renderer.shadowMap.needsUpdate = true;
     }
-    refreshArtwork();
+    // The async job yields immediately and is cancelled by dispose/context loss.
+    refreshArtwork().catch((error) =>
+      console.warn("Photograph rendering failed", error),
+    );
     let desired = 0,
       current = 0,
       reduced = false,
@@ -373,18 +355,22 @@ export async function createWorld(container) {
     function contextLostEvent(event) {
       event.preventDefault();
       contextLost = true;
+      artworkVersion++;
       cancelAnimationFrame(frame);
       frame = 0;
       container.classList.remove("ready");
       document.documentElement.classList.remove("webgl");
       document.documentElement.classList.add("no-webgl");
     }
-    function contextRestored() {
+    async function contextRestored() {
       if (disposed) return;
       try {
         contextLost = false;
         renderer.shadowMap.needsUpdate = true;
-        refreshArtwork();
+        const artwork = refreshArtwork(),
+          version = artworkVersion;
+        await artwork;
+        if (disposed || contextLost || version !== artworkVersion) return;
         renderer.shadowMap.needsUpdate = true;
         last = 0;
         container.classList.add("ready");

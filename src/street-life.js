@@ -618,20 +618,22 @@ export function buildStreetLife(city, k, map, obstacles) {
     return o;
   }
   // Shared shapes retain different vehicle dimensions and accessories.
-  const buckets = new Map();
+  const buckets = new Map(),
+    shapeIds = new WeakMap();
   root.traverse((o) => {
     if (!o.isMesh) return;
-    o.geometry.computeBoundingBox();
-    const sz = o.geometry.boundingBox
+    let shapeId = shapeIds.get(o.geometry);
+    if (!shapeId) {
+      if (!o.geometry.boundingBox) o.geometry.computeBoundingBox();
+      const sz = o.geometry.boundingBox
         .getSize(new T.Vector3())
         .toArray()
         .map((v) => v.toFixed(5))
-        .join(","),
-      id =
-        o.material.uuid +
-        o.geometry.type +
-        JSON.stringify(o.geometry.parameters) +
-        sz;
+        .join(",");
+      shapeId = o.geometry.type + JSON.stringify(o.geometry.parameters) + sz;
+      shapeIds.set(o.geometry, shapeId);
+    }
+    const id = o.material.uuid + shapeId;
     if (!buckets.has(id))
       buckets.set(id, {
         geometry: o.geometry,
@@ -652,6 +654,10 @@ export function buildStreetLife(city, k, map, obstacles) {
     city.add(inst);
     batches.push({ ...b, inst });
   }
+  // These meshes only supply animated matrices to the visible instance batches.
+  // Keep them out of render and reflection scene traversals; update() handles
+  // their world matrices explicitly.
+  root.removeFromParent();
   const hero = vehicles.find((v) => v.type === "taxi");
   let previous = 0,
     progress = 0;
@@ -890,6 +896,29 @@ export function buildStreetLife(city, k, map, obstacles) {
     },
     setProgress(q) {
       progress = q;
+    },
+    dispose() {
+      const animationIndex = k.animations.indexOf(update);
+      if (animationIndex !== -1) k.animations.splice(animationIndex, 1);
+      const attachedGeometries = new Set(),
+        templateGeometries = new Set(),
+        templateNodes = [];
+      let scene = city;
+      while (scene.parent) scene = scene.parent;
+      scene.traverse((o) => {
+        if (o.geometry) attachedGeometries.add(o.geometry);
+      });
+      root.traverse((o) => {
+        templateNodes.push(o);
+        if (o.geometry) templateGeometries.add(o.geometry);
+      });
+      for (const geometry of templateGeometries)
+        if (!attachedGeometries.has(geometry)) geometry.dispose();
+      for (let i = templateNodes.length - 1; i >= 0; i--)
+        templateNodes[i].clear();
+      for (const batch of batches) batch.items.length = 0;
+      people.length = 0;
+      vehicles.length = 0;
     },
   };
 }

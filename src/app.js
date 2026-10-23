@@ -118,10 +118,13 @@ function update() {
           : 0
         : clamp(fadeIn * fadeOut);
     panel.style.opacity = opacity;
+    // Hidden captions still take part in font/layout measurement, but do not
+    // retain transformed full-screen surfaces between their scenes.
+    panel.style.visibility = opacity === 0 ? "hidden" : "visible";
     panel.inert = opacity < 0.5 || !entered;
     panel.classList.toggle("active", opacity > 0.5 && entered);
     panel.style.transform =
-      reduced.matches || returning
+      reduced.matches || returning || opacity === 0
         ? "none"
         : `translate3d(0,${(clamp(p, -0.2, 1.2) - 0.3) * -12}px,0)`;
     panel.style.filter =
@@ -189,7 +192,8 @@ addEventListener("scroll", schedule, { passive: true });
 addEventListener("resize", resizeJourney);
 document.fonts?.ready.then(schedule);
 addEventListener("load", schedule);
-// No gesture gate. Readiness dismisses the loader automatically, with a bounded fallback.
+// No gesture gate. Dismiss on actual readiness or a reported initialization error;
+// slower devices may legitimately need longer than an arbitrary time limit.
 const arrival = $("#arrival"),
   background = [
     ...document.querySelectorAll(".masthead,.hud,.chapter-nav,.journey"),
@@ -229,16 +233,11 @@ import("./world.js")
     if (ember) world.setAccent(ember);
     ready();
   })
-  .catch(() => {
+  .catch((error) => {
+    console.error("Unable to initialize the 3D world.", error);
     root.classList.add("no-webgl");
     ready(true);
   });
-setTimeout(() => {
-  if (!entered) {
-    root.classList.add("no-webgl");
-    ready(true);
-  }
-}, 4500);
 function setMotion(value) {
   paused = value;
   root.classList.toggle("motion-off", paused);
@@ -550,3 +549,5 @@ addEventListener("pagehide", (event) => {
   mixtape.dispose();
   fxContext?.close();
 });
+// The early classic script can now stop watching for module/bootstrap errors.
+dispatchEvent(new Event("portfolio:ui-ready"));

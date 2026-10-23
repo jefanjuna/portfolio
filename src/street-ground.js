@@ -1,5 +1,18 @@
 import { makeStreetSpace } from "./street-space.js";
-export function buildStreetGround(city, k, map) {
+import { yieldTask } from "./yield-task.js";
+export async function buildStreetGround(city, k, map, checkpoint = yieldTask) {
+  // Keep deterministic construction order while letting the caller pack finished
+  // meshes and return control to the browser during large road/footway stages.
+  let generated = 0,
+    nextCheckpoint = performance.now() + 8;
+  function checkpointDue() {
+    return ++generated >= 64 || performance.now() >= nextCheckpoint;
+  }
+  async function pauseConstruction() {
+    await checkpoint();
+    generated = 0;
+    nextCheckpoint = performance.now() + 8;
+  }
   const {
       THREE: T,
       mat,
@@ -127,6 +140,7 @@ export function buildStreetGround(city, k, map) {
               a[1] + (dz * s) / len - (dx / len) * side,
             );
             o.rotation.y = Math.atan2(dx, dz);
+            if (checkpointDue()) await pauseConstruction();
           }
         }
       if (r.bridge && len > 20) {
@@ -138,6 +152,7 @@ export function buildStreetGround(city, k, map) {
             const pier = cyl(1.2, y, paving, city, x, y / 2, z);
             pier.castShadow = true;
           }
+          if (checkpointDue()) await pauseConstruction();
         }
         for (const side of [-1, 1]) {
           const off = r.width / 2 + 1;
@@ -158,11 +173,14 @@ export function buildStreetGround(city, k, map) {
             rail,
             city,
           );
+          if (checkpointDue()) await pauseConstruction();
         }
       }
+      if (checkpointDue()) await pauseConstruction();
     }
+    if (checkpointDue()) await pauseConstruction();
   }
-  for (const j of joints.values())
+  for (const j of joints.values()) {
     if (j.count > 2) {
       const o = mesh(
         new T.CircleGeometry(j.w / 2, 16),
@@ -174,6 +192,8 @@ export function buildStreetGround(city, k, map) {
       );
       o.rotation.x = -Math.PI / 2;
     }
+    if (checkpointDue()) await pauseConstruction();
+  }
   for (const w of map.walks) {
     if (w.steps) continue;
     if (!w.crossing) {
@@ -215,9 +235,10 @@ export function buildStreetGround(city, k, map) {
             a[1] + (dz * d) / l,
           );
           o.rotation.y = Math.atan2(dx, dz);
+          if (checkpointDue()) await pauseConstruction();
         }
       if (w.bridge) {
-        for (const side of [-1, 1])
+        for (const side of [-1, 1]) {
           tube(
             [
               [
@@ -235,6 +256,8 @@ export function buildStreetGround(city, k, map) {
             rail,
             city,
           );
+          if (checkpointDue()) await pauseConstruction();
+        }
         if (w.name === "The Helix" && l > 4) {
           for (const phase of [0, Math.PI]) {
             const pts = [];
@@ -248,10 +271,13 @@ export function buildStreetGround(city, k, map) {
               ]);
             }
             tube(pts, 0.12, rail, city);
+            if (checkpointDue()) await pauseConstruction();
           }
         }
       }
+      if (checkpointDue()) await pauseConstruction();
     }
+    if (checkpointDue()) await pauseConstruction();
   }
   const signals = [],
     red = mat({ color: "#a31d21", emissive: "#fb262c", emissiveIntensity: 2 }),
@@ -280,9 +306,11 @@ export function buildStreetGround(city, k, map) {
         3.54 - j * 0.32,
         0.17,
       );
+      o.userData.dynamic = true;
       bulbs.push(o);
     }
     signals.push({ bulbs, offset: (i % 2) * 11 });
+    if (checkpointDue()) await pauseConstruction();
   }
   k.animations.push((t) =>
     signals.forEach(({ bulbs, offset }) => {

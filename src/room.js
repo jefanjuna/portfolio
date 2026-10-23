@@ -732,6 +732,7 @@ export function buildRoom(scene, k) {
     0.07,
     0.016,
   );
+  seconds.userData.dynamic = true;
   animations.push(
     (time) => (seconds.rotation.z = (-Math.floor(time) * Math.PI) / 30),
   );

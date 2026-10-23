@@ -7,6 +7,8 @@ import { buildStreetGround } from "./street-ground.js";
 import { buildLandscape } from "./landscape.js";
 import { buildNightSky } from "./night-sky.js";
 import { sampleShot } from "./world-path.js";
+import { createStaticBatch } from "./static-batch.js";
+import { yieldTask } from "./yield-task.js";
 export async function buildCity(scene, k) {
   const map = await fetch("./assets/marina-bay-map.json").then((r) => {
       if (!r.ok) throw Error("Map geometry unavailable");
@@ -35,9 +37,21 @@ export async function buildCity(scene, k) {
     o.castShadow = height > 2;
     return o;
   }
-  const ground = buildStreetGround(city, k, map),
+  const batches = createStaticBatch(city),
+    ground = await buildStreetGround(city, k, map, async () => {
+      batches.collect();
+      await yieldTask();
+    }),
     architecture = makeArchitecture(k, city, map);
-  map.buildings.forEach((b) => architecture.build(b));
+  for (let i = 0; i < map.buildings.length; i++) {
+    architecture.build(map.buildings[i]);
+    if (i % 80 === 79) {
+      batches.collect();
+      await yieldTask();
+    }
+  }
+  batches.collect();
+  await yieldTask();
   const landscape = buildLandscape(city, k, map, polygon, ground.space),
     towers = [
       architecture.facade("glass", "#8dabb6"),
@@ -48,11 +62,16 @@ export async function buildCity(scene, k) {
       architecture.facade("concrete", "#b6b7b3"),
       architecture.facade("glass", "#7b9aa8"),
     ];
-  const landmarks = buildLandmarks(city, k, map, polygon, towers),
-    life = buildStreetLife(city, k, map, landscape.obstacles),
+  batches.collect();
+  await yieldTask();
+  const landmarks = buildLandmarks(city, k, map, polygon, towers);
+  batches.collect();
+  await yieldTask();
+  const life = buildStreetLife(city, k, map, landscape.obstacles),
     clouds = buildClouds(city, k),
     sky = buildNightSky(city, k);
   const water = buildBayWater(city, k, map);
+  await batches.finish();
   let lastEye = [];
   return {
     city,
@@ -82,6 +101,7 @@ export async function buildCity(scene, k) {
       }
     },
     dispose() {
+      life.dispose();
       water.dispose();
     },
   };

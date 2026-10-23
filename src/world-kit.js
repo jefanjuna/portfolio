@@ -36,7 +36,10 @@ export function makeKit(renderer) {
   accentMaterials.push(palette.accent);
   const cube = new THREE.BoxGeometry(1, 1, 1),
     cylinder = new THREE.CylinderGeometry(1, 1, 1, 12),
-    sphere = new THREE.IcosahedronGeometry(1, 1);
+    sphere = new THREE.IcosahedronGeometry(1, 1),
+    roundedBoxes = new Map(),
+    tubes = new Map(),
+    planes = new Map();
   function mesh(geometry, material, parent, x = 0, y = 0, z = 0) {
     const o = new THREE.Mesh(geometry, material);
     o.position.set(x, y, z);
@@ -44,16 +47,17 @@ export function makeKit(renderer) {
     return o;
   }
   function box(w, h, d, material, parent, x = 0, y = 0, z = 0, r = 0) {
-    const o = mesh(
-      r
-        ? new RoundedBoxGeometry(w, h, d, 2, Math.min(r, w / 3, h / 3, d / 3))
-        : cube,
-      material,
-      parent,
-      x,
-      y,
-      z,
-    );
+    let geometry = cube;
+    if (r) {
+      const radius = Math.min(r, w / 3, h / 3, d / 3),
+        key = JSON.stringify([w, h, d, radius]);
+      geometry = roundedBoxes.get(key);
+      if (!geometry) {
+        geometry = new RoundedBoxGeometry(w, h, d, 2, radius);
+        roundedBoxes.set(key, geometry);
+      }
+    }
+    const o = mesh(geometry, material, parent, x, y, z);
     if (!r) o.scale.set(w, h, d);
     o.castShadow = true;
     o.receiveShadow = true;
@@ -73,17 +77,19 @@ export function makeKit(renderer) {
     return o;
   }
   function tube(points, r, material, parent) {
-    return mesh(
-      new THREE.TubeGeometry(
+    const key = JSON.stringify([points, r]);
+    let geometry = tubes.get(key);
+    if (!geometry) {
+      geometry = new THREE.TubeGeometry(
         new THREE.CatmullRomCurve3(points.map((p) => new THREE.Vector3(...p))),
         24,
         r,
         6,
         false,
-      ),
-      material,
-      parent,
-    );
+      );
+      tubes.set(key, geometry);
+    }
+    return mesh(geometry, material, parent);
   }
   function texture(w, h, draw) {
     const c = document.createElement("canvas");
@@ -97,7 +103,19 @@ export function makeKit(renderer) {
     return t;
   }
   function plane(w, h, material, parent, x, y, z) {
-    return mesh(new THREE.PlaneGeometry(w, h), material, parent, x, y, z);
+    const key = JSON.stringify([w, h]);
+    let geometry = planes.get(key);
+    if (!geometry) {
+      geometry = new THREE.PlaneGeometry(w, h);
+      planes.set(key, geometry);
+    }
+    return mesh(geometry, material, parent, x, y, z);
+  }
+  function releaseGeometryCaches() {
+    // Construction is complete; the scene owns the shared geometry lifetimes.
+    roundedBoxes.clear();
+    tubes.clear();
+    planes.clear();
   }
   function action(o, name) {
     o.userData.action = name;
@@ -154,5 +172,6 @@ export function makeKit(renderer) {
     action,
     group,
     contact,
+    releaseGeometryCaches,
   };
 }

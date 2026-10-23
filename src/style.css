@@ -259,10 +259,10 @@ em {
   position: fixed;
   inset: 0;
   opacity: 0;
+  visibility: hidden;
   pointer-events: none;
   padding: 24svh 0 0;
   overflow: hidden;
-  will-change: opacity, transform;
 }
 .scene-panel.active {
   pointer-events: auto;
@@ -1411,6 +1411,7 @@ html.motion-off {
     font-size: 7px;
   }
 }
+
 @media (prefers-reduced-motion: reduce) {
   html {
     scroll-behavior: auto;
@@ -3375,4 +3376,35 @@ footer a:focus-visible {
   .touch-input .masthead nav :is(a, button) {
     min-width: 44px;
   }
+}
+
+/* A failed UI module must not leave the loading sheet covering the story.
+   This layout is only used after a real bootstrap error, never a slow load. */
+.startup-error .chapter {
+  height: auto !important;
+  min-height: 100svh;
+}
+.startup-error .scene-panel {
+  position: relative;
+  visibility: visible !important;
+  opacity: 1 !important;
+  transform: none !important;
+  filter: none !important;
+  pointer-events: auto;
+  padding: 110px 7vw 64px !important;
+}
+.startup-error .scene-panel > .scene-content {
+  position: static;
+  display: block;
+  width: auto;
+  transform: none;
+}
+.startup-error .scene-panel :is(.word-inner, .eyebrow, .scene-copy) {
+  opacity: 1;
+  transform: none;
+  filter: none;
+}
+.startup-error
+  :is(.hud, .chapter-nav, #journey-return, #loop-buffer, [data-detail]) {
+  display: none;
 }

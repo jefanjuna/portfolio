@@ -24,3 +24,22 @@ The build bundles and minifies JavaScript, removes unused dependency exports, ke
 Audio and WOFF2 fonts are already compressed; the build copies them without re-encoding. Licence notices are preserved, including the bundled Three.js licence. Map, music and font details are available on the site's Credits page.
 
 The readable source is public; do not put credentials or private files in `src/assets/`.
+
+## Rendering on phones
+
+Construction yields between road and building groups to keep the loading animation
+and input responsive. Static surfaces are compacted as construction proceeds;
+repeated shapes use shared geometry and spatially bounded instance batches.
+Hidden vehicle/person models only supply animation matrices and are excluded from
+render traversal. Traffic, people, water reflections and camera interactions stay
+active.
+
+Facade diffuse textures are shared by style. Compact screens and devices with a
+coarse pointer use smaller emissive textures, drawn from the same window layout
+and colours. Desktop texture resolution is unchanged. Photographs are rendered
+progressively after the world becomes ready, with cancellation and restoration
+when the WebGL context is lost. Invisible scene captions retain measurable layout
+without permanent full-screen compositor hints.
+
+`npm test` checks static batching against the original geometry, including vertex
+attributes, normals, UVs, mirrored/sheared transforms and animated exclusions.

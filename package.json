@@ -6,7 +6,8 @@
   "scripts": {
     "build": "node scripts/build.mjs && node scripts/check-build.mjs",
     "check": "node scripts/check-build.mjs",
-    "format": "prettier --write \"src/*.js\" \"src/*.html\" \"src/*.css\" \"scripts/*.mjs\" package.json vercel.json README.md"
+    "format": "prettier --write \"src/*.js\" \"src/*.html\" \"src/*.css\" \"scripts/*.mjs\" package.json vercel.json README.md",
+    "test": "node scripts/check-world.mjs"
   },
   "engines": {
     "node": ">=24"
