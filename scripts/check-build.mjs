@@ -20,7 +20,7 @@ async function walk(path) {
 
 const files = await walk(output);
 const index = await text(resolve(output, "index.html"));
-const credits = await text(resolve(output, "credits.html"));
+assert.ok(!files.includes(resolve(output, "credits.html")));
 const sourceHTML = await text(resolve(source, "index.html"));
 const extract = (html, attribute) =>
   [
@@ -34,13 +34,18 @@ assert.deepEqual(extract(index, "id").sort(), extract(sourceHTML, "id").sort());
 assert.match(index, /Made with ❤️ and 3js/);
 assert.doesNotMatch(index, /Website made with/);
 const navigation = index.match(/<header\b[\s\S]*?<\/header>/)?.[0] || "";
-assert.match(
-  navigation,
-  /href=(?:"\/credits\.html"|\/credits\.html)[\s\S]*?Credits/,
-);
+assert.match(navigation, /id=(?:"credits-open"|credits-open)[\s\S]*?Credits/);
 assert.doesNotMatch(await text(resolve(source, "app.js")), /credits-link/);
 assert.doesNotMatch(index, /type=["']?importmap|<script(?:\s[^>]*)?>\s*[^<\s]/);
-assert.match(credits, /Three-LICENSE\.txt/);
+assert.match(index, /id=(?:"credits-dialog"|credits-dialog)/);
+assert.match(index, /Three-LICENSE\.txt/);
+assert.doesNotMatch(index, /credits\.html|↗|Ⅰ◀|▶Ⅰ|Ⅱ|▶/);
+const sprite = await text(resolve(output, "assets/icons.svg"));
+const symbols = new Set(extract(sprite, "id"));
+for (const href of extract(index, "href")) {
+  if (href.startsWith("/assets/icons.svg#"))
+    assert.ok(symbols.has(href.split("#")[1]), href);
+}
 
 // Every local HTML/CSS reference must resolve within the deployable directory.
 const checkURL = async (value) => {
@@ -55,7 +60,7 @@ const checkURL = async (value) => {
   );
   assert.ok((await stat(path)).isFile(), value);
 };
-for (const html of [index, credits]) {
+for (const html of [index]) {
   for (const attribute of ["src", "href"]) {
     for (const value of extract(html, attribute)) {
       if (value !== "/") await checkURL(value);

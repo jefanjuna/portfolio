@@ -21,7 +21,7 @@ Vercel runs the same build for `main` and serves only `dist/`. No separate produ
 
 The build bundles and minifies JavaScript, removes unused dependency exports, keeps the 3D world in a dynamic chunk, and minifies CSS, HTML, SVG serialization and JSON. JavaScript and CSS receive content-based filenames for safe long-term caching. Object properties and geometric precision are preserved. Source maps are not published.
 
-Audio and WOFF2 fonts are already compressed; the build copies them without re-encoding. Licence notices are preserved, including the bundled Three.js licence. Map, music and font details are available on the site's Credits page.
+Audio and WOFF2 fonts are already compressed; the build copies them without re-encoding. Licence notices are preserved, including the bundled Three.js licence. Map, music and font details are available on the site's Credits menu.
 
 The readable source is public; do not put credentials or private files in `src/assets/`.
 

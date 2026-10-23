@@ -117,7 +117,7 @@ const htmlOptions = {
   minifyCSS: true,
   minifyJS: true,
 };
-for (const name of ["index.html", "credits.html"]) {
+for (const name of ["index.html"]) {
   const html = (await readFile(resolve(source, name), "utf8"))
     .replaceAll('href="/style.css"', `href="${cssURL}"`)
     .replaceAll('src="/app.js"', `src="${appURL}"`)

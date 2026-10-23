@@ -633,6 +633,9 @@ em {
 .arrival {
   position: fixed;
   inset: 0;
+  display: grid;
+  place-items: center;
+  padding: 20px;
   z-index: 100;
   background: var(--ink);
   transition:
@@ -644,12 +647,6 @@ em {
   opacity: 0;
   visibility: hidden;
   pointer-events: none;
-}
-.arrival-inner {
-  position: absolute;
-  left: 12vw;
-  top: 50%;
-  transform: translateY(-50%);
 }
 .arrival-inner > .micro {
   color: var(--accent);
@@ -1344,10 +1341,6 @@ html.motion-off {
   .chapter-nav a[aria-current]:before {
     width: 8px;
   }
-  .arrival-inner {
-    left: 9vw;
-    right: 7vw;
-  }
   .arrival-inner > .micro {
     font-size: 7px;
   }
@@ -1448,13 +1441,6 @@ html.loading {
   transition:
     opacity 0.65s ease,
     visibility 0.65s;
-}
-.arrival-inner {
-  left: 50%;
-  transform: translate(-50%, -50%);
-  text-align: center;
-  width: max-content;
-  max-width: 90vw;
 }
 .loading-monogram {
   font: 900 clamp(100px, 20vw, 240px)/1 var(--display);
@@ -1865,9 +1851,6 @@ dialog.closing::backdrop {
   .loading-monogram span {
     transform: none;
   }
-}
-.arrival-inner {
-  right: auto;
 }
 .monogram {
   font-weight: 900;
@@ -2768,11 +2751,8 @@ footer a:focus-visible {
   transform: translate3d(0, -101%, 0);
   pointer-events: none;
 }
-.arrival-inner {
-  transition: transform 0.85s cubic-bezier(0.76, 0, 0.24, 1);
-}
 .arrival.closed .arrival-inner {
-  transform: translate(-50%, -80%);
+  transform: translateY(-24px);
 }
 .arrival-corner {
   transition: transform 0.8s cubic-bezier(0.76, 0, 0.24, 1);
@@ -2791,7 +2771,7 @@ footer a:focus-visible {
     opacity: 0;
   }
   .arrival.closed .arrival-inner {
-    transform: translate(-50%, -50%);
+    transform: none;
   }
 }
 
@@ -3273,16 +3253,6 @@ footer a:focus-visible {
 }
 
 /* Keep the loader artwork centred without the display font's trailing tracking. */
-.arrival-inner {
-  inset: auto;
-  left: 50%;
-  top: 50%;
-  width: min(90vw, 460px);
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  transform: translate(-50%, -50%);
-}
 .loading-monogram {
   display: flex;
   align-items: center;
@@ -3313,31 +3283,6 @@ footer a:focus-visible {
 .ending-panel footer > span:last-child {
   margin-left: auto;
   text-align: right;
-}
-.credits-page main {
-  max-width: 760px;
-  margin: 0 auto;
-  padding: 70px 28px;
-  font-size: 15px;
-  line-height: 1.8;
-}
-.credits-page h1 {
-  font: clamp(50px, 10vw, 90px)/1.1 var(--serif);
-  margin: 50px 0 30px;
-}
-.credits-page h2 {
-  margin: 32px 0 8px;
-  font-size: 20px;
-}
-.credits-page a {
-  border-bottom: 1px solid var(--line);
-  transition: color 0.2s;
-}
-.credits-page a:hover {
-  color: var(--accent);
-}
-.credits-page p + p {
-  margin-top: 12px;
 }
 @media (max-width: 600px) {
   .ending-panel footer {
@@ -3407,4 +3352,58 @@ footer a:focus-visible {
 .startup-error
   :is(.hud, .chapter-nav, #journey-return, #loop-buffer, [data-detail]) {
   display: none;
+}
+
+/* Fixed SVG view boxes keep controls consistent across fonts and platforms. */
+.icon {
+  display: inline-block;
+  width: 1em;
+  height: 1em;
+  flex: none;
+  fill: currentColor;
+  vertical-align: -0.125em;
+  pointer-events: none;
+}
+.transport button {
+  display: grid;
+  place-items: center;
+  width: 48px;
+  height: 48px;
+  padding: 0;
+  line-height: 1;
+}
+.transport button .icon {
+  display: block;
+  width: 20px;
+  height: 20px;
+}
+.motion-toggle .icon,
+.sound-toggle .icon {
+  width: 14px;
+  height: 14px;
+}
+.detail-back .icon {
+  margin-right: 5px;
+}
+.credits-dialog .dialog-content p a {
+  margin-top: 0;
+  padding: 0 0 2px;
+}
+
+/* Grid handles centring during font loading and viewport changes. Only the
+   deliberate exit moves the content; layout changes never animate its centre. */
+.arrival-inner {
+  position: relative;
+  inset: auto;
+  width: min(100%, 460px);
+  max-width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  transform: none;
+  transition: transform 0.85s cubic-bezier(0.76, 0, 0.24, 1);
+}
+.loading-monogram {
+  font-size: clamp(64px, min(max(90px, 18vw), 28dvh), 210px);
 }

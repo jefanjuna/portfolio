@@ -191,6 +191,9 @@ export async function buildStreetGround(city, k, map, checkpoint = yieldTask) {
         j.p[1],
       );
       o.rotation.x = -Math.PI / 2;
+      // Match the carriageway's lighting: unshadowed junction fills appear as
+      // bright discs on desktop, where directional shadows are enabled.
+      o.receiveShadow = true;
     }
     if (checkpointDue()) await pauseConstruction();
   }

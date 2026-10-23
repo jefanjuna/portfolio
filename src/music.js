@@ -1,3 +1,4 @@
+import { createIcon } from "./icons.js";
 import { soundtrack } from "./soundtrack.js";
 
 // A native audio element plays the complete licensed recordings. Playback state
@@ -66,7 +67,7 @@ export function createMixtape({ onPlaying = () => {} } = {}) {
     playing = isPlaying;
     document.documentElement.classList.toggle("is-playing", playing);
     const active = !audio.paused && !audio.ended && !audio.error;
-    button.textContent = active ? "Ⅱ" : "▶";
+    button.replaceChildren(createIcon(active ? "pause" : "play"));
     button.setAttribute("aria-label", active ? "Pause track" : "Play track");
     mini.setAttribute("aria-label", requested ? "Open player" : "Start music");
     $("#mini-state").textContent = playing

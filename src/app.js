@@ -1,3 +1,4 @@
+import { createIcon, iconMarkup } from "./icons.js";
 import { createMixtape } from "./music.js";
 import { createPointer } from "./pointer.js";
 import { mirrorSecondaryClick } from "./secondary-click.js";
@@ -246,7 +247,8 @@ function setMotion(value) {
     "aria-label",
     paused ? "Resume idle animation" : "Pause idle animation",
   );
-  $("#motion-toggle").innerHTML = `${paused ? "▷" : "Ⅱ"} <span>Motion</span>`;
+  $("#motion-toggle").innerHTML =
+    `${iconMarkup(paused ? "play" : "pause")} <span>Motion</span>`;
   world?.setMotion(sceneCanMove());
 }
 $("#motion-toggle").addEventListener("click", () => setMotion(!paused));
@@ -286,7 +288,7 @@ function paintSound() {
     soundOn ? "Turn sound off" : "Turn sound on",
   );
   $("#sound-toggle").innerHTML =
-    `${soundOn ? "♪" : "♩"} <span>Sound ${soundOn ? "on" : "off"}</span>`;
+    `${iconMarkup(soundOn ? "sound" : "sound-off")} <span>Sound ${soundOn ? "on" : "off"}</span>`;
 }
 $("#sound-toggle").addEventListener("click", () =>
   mixtape.active ? mixtape.pause() : mixtape.play(),
@@ -322,7 +324,7 @@ const details = {
   work: {
     kicker: "Small projects, real questions",
     title: "Project showcase.",
-    html: '<p>Pick something to see the problem, the approach and the current scope.</p><button class="work-row" type="button" data-detail="pyjosh"><strong>01 / PyJosh ↗</strong><small>A configurable neural-network framework with Python and JAX.</small></button><button class="work-row" type="button" data-detail="sunbrew"><strong>02 / Sunbrew ↗</strong><small>A homework tracker for a familiar school problem.</small></button><button class="work-row" type="button" data-detail="optialgos"><strong>03 / optialgos ↗</strong><small>Algorithm experiments in Python and C++.</small></button>',
+    html: `<p>Pick something to see the problem, the approach and the current scope.</p><button class="work-row" type="button" data-detail="pyjosh"><strong>01 / PyJosh ${iconMarkup("arrow-up-right")}</strong><small>A configurable neural-network framework with Python and JAX.</small></button><button class="work-row" type="button" data-detail="sunbrew"><strong>02 / Sunbrew ${iconMarkup("arrow-up-right")}</strong><small>A homework tracker for a familiar school problem.</small></button><button class="work-row" type="button" data-detail="optialgos"><strong>03 / optialgos ${iconMarkup("arrow-up-right")}</strong><small>Algorithm experiments in Python and C++.</small></button>`,
     url: "https://github.com/jefanjuna",
   },
   pyjosh: {
@@ -404,16 +406,24 @@ function showDetail(key) {
   $("#detail-title").textContent = item.title;
   $("#detail-copy").innerHTML =
     (["pyjosh", "sunbrew", "optialgos"].includes(key)
-      ? '<button class="detail-back" type="button" data-detail="work">← Back to projects</button>'
+      ? `<button class="detail-back" type="button" data-detail="work">${iconMarkup("arrow-left")} Back to projects</button>`
       : "") + item.html;
   $("#detail-source").href = item.url;
-  $("#detail-source").textContent = ["profile", "media", "work"].includes(key)
-    ? "Find me on GitHub ↗"
-    : "Explore the repository ↗";
+  $("#detail-source").replaceChildren(
+    document.createTextNode(
+      ["profile", "media", "work"].includes(key)
+        ? "Find me on GitHub "
+        : "Explore the repository ",
+    ),
+    createIcon("arrow-up-right"),
+  );
   openDialog($("#details"));
   $("#details").scrollTop = 0;
   requestAnimationFrame(() => content.classList.add("content-in"));
 }
+$("#credits-open").addEventListener("click", () =>
+  openDialog($("#credits-dialog")),
+);
 $("#chapter-open").addEventListener("click", () =>
   openDialog($("#chapter-dialog")),
 );
